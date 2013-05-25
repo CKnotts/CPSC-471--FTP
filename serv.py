@@ -25,7 +25,7 @@ CMD_LEN = 100
 # @param sock - the socket to send the data over
 # @param data - the actual data to send
 ########################################################################
-def sendData(sock, data):  
+def sendData(sock, data):	
 	# The total number of bytes sent in one shot
 	numSent = 0	
 	# The cumulative number of bytes sent
@@ -57,7 +57,7 @@ def sendSize(sock, size):
 
 ########################################################################
 # getFileInfo - gets information about a file
-# @param filepath - the relative path to the file
+# @param path - the relative path to the file
 # #return - Tuple - (file pointer, file size, file name)	
 #         - None if invalid file path
 ########################################################################
@@ -99,12 +99,12 @@ def recvData(sock, size):
 # @return - the received size
 ########################################################################
 def recvSize(sock):
-
-	# Get the string size
-	strSize = recvData(sock, LEN_LEN)
-
-	# Conver the size to an integer and return 
-	return int(strSize)
+    print "In recvSize"
+    # Get the string size
+    strSize = recvData(sock, LEN_LEN)
+    print strSize
+    # Conver the size to an integer and return
+    return int(strSize)
 
 
 ########################################################################
@@ -132,6 +132,20 @@ def recvCmd(sock):
 def getFileList():
     files = [f for f in listdir(os.getcwd()) if isfile(join(os.getcwd(),f)) ]
     return files
+
+
+########################################################################
+# Sends a message to the client
+# @param sock - the socket to send it over
+# @param message - the message
+########################################################################
+def sendMessage(sock, message):
+	# Pad the message with trailing $'s
+	while len(message) < LEN_LEN:
+		message += '$'
+
+	# Send the message
+	sendData(sock, message)
 
 
 ########################################################################
@@ -173,12 +187,57 @@ def main(port):
             elif cmdinfo['cmd'] == "put":
                 print "put command"
 
+                fileInfo = getFileInfo(cmdinfo['filename'])
+
+                # Make sure the client is sending a file the server does
+                # not yet have.
+                if not fileInfo:
+                    # Send an OK message to the client.
+                    sendMessage(client, '1')
+
+                    # Receive the size of the file from the server.
+                    fileSize = recvSize(dataSocket)
+                    print fileSize
+
+                    # Since we know the filename, open the file.
+                    file = open(cmdinfo['filename'], 'w')
+
+                    chunkSize   = 100
+                    bytesRecvd    = 0
+                    while (bytesRecvd < fileSize):
+                        # By default receive chunkSize bytes
+                        numToRecv = chunkSize
+
+                        # Is this the last chunk?
+                        if fileSize - bytesRecvd < chunkSize:
+                            numToRecv = fileSize - bytesRecvd
+                        # Receive the amount of data
+                        data = recvData(dataSocket, numToRecv)
+
+                        # Save the data
+                        file.write(data)
+
+                        # Update the total number of bytes received
+                        bytesRecvd += len(data)
+
+                    # Transfer complete, close the file.
+                    file.close()
+
+                    if not bytesRecvd:
+                        os.remove(cmdinfo['filename'])
+                else:
+                    # Send error message to the client.
+                    sendMessage(client, '0')
+
             elif cmdinfo['cmd'] == "get":
                 print "get command"
 
                 fileInfo = getFileInfo(cmdinfo['filename'])
 
                 if fileInfo:
+                    # Send an OK message to the client.
+                    sendMessage(client, '1')
+
                     # Send the file size.
                     sendSize(dataSocket, fileInfo[1])
 
@@ -188,7 +247,8 @@ def main(port):
                     # Close the file.
                     fileInfo[0].close()
                 else:
-                    sendSize(dataSocket, -1)
+                    # Send error message to the client.
+                    sendMessage(client, '0')
 
             elif cmdinfo['cmd'] == "quit":
                 print "quit command"
