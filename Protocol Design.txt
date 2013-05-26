@@ -62,7 +62,7 @@ Designing the Protocol
 
 
 
------- Professor Goffman's Questions ------
+------ Professor Gofman's Questions ------
 
 - What kinds of messages will be exchanged across the control channel?
     commands - ls, get, put
