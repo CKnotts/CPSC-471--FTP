@@ -99,7 +99,6 @@ def recvData(sock, size):
 # @return - the received size
 ########################################################################
 def recvSize(sock):
-    print "In recvSize"
     # Get the string size
     strSize = recvData(sock, LEN_LEN)
     # Conver the size to an integer and return
@@ -139,12 +138,12 @@ def getFileList():
 # @param message - the message
 ########################################################################
 def sendMessage(sock, message):
-	# Pad the message with trailing $'s
-	while len(message) < LEN_LEN:
-		message += '$'
+    # Pad the message with trailing $'s
+    while len(message) < LEN_LEN:
+        message += '$'
 
-	# Send the message
-	sendData(sock, message)
+    # Send the message
+    sendData(sock, message)
 
 
 ########################################################################
