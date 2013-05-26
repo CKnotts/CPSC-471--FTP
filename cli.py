@@ -65,7 +65,6 @@ def sendData(sock, data):
 # @param size - the size to send
 ########################################################################
 def sendSize(sock, size):
-    print "in sendSize"
     # Convert the size into string
     strSize = str(size) 	
     # Padd the size with leading 0's
